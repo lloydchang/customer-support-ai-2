@@ -1,38 +1,94 @@
-const sendMessage = async () => {
-  setMessage('')  // Clear the input field
-  setMessages((messages) => [
-    ...messages,
-    { role: 'user', content: message },  // Add the user's message to the chat
-    { role: 'assistant', content: '' },  // Add a placeholder for the assistant's response
-  ])
+'use client'
 
-  // Send the message to the server
-  const response = fetch('/api/chat', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+import { Box, Button, Stack, TextField } from '@mui/material'
+import { useState } from 'react'
+
+export default function Home() {
+  const [messages, setMessages] = useState([
+    {
+      role: 'assistant',
+      content: "Hi! I'm the Headstarter support assistant. How can I help you today?",
     },
-    body: JSON.stringify([...messages, { role: 'user', content: message }]),
-  }).then(async (res) => {
-    const reader = res.body.getReader()  // Get a reader to read the response body
-    const decoder = new TextDecoder()  // Create a decoder to decode the response text
+  ])
+  const [message, setMessage] = useState('')
 
-    let result = ''
-    // Function to process the text from the response
-    return reader.read().then(function processText({ done, value }) {
-      if (done) {
-        return result
+  const sendMessage = async () => {
+    if (!message.trim()) return; // Avoid sending empty messages
+
+    const newMessage = { role: 'user', content: message }
+
+    setMessages((prevMessages) => [...prevMessages, newMessage])
+    setMessage('') // Clear the input field
+
+    // Simulate an assistant response (optional)
+    setTimeout(() => {
+      const assistantResponse = {
+        role: 'assistant',
+        content: "I'm here to help! What do you need assistance with?",
       }
-      const text = decoder.decode(value || new Uint8Array(), { stream: true })  // Decode the text
-      setMessages((messages) => {
-        let lastMessage = messages[messages.length - 1]  // Get the last message (assistant's placeholder)
-        let otherMessages = messages.slice(0, messages.length - 1)  // Get all other messages
-        return [
-          ...otherMessages,
-          { ...lastMessage, content: lastMessage.content + text },  // Append the decoded text to the assistant's message
-        ]
-      })
-      return reader.read().then(processText)  // Continue reading the next chunk of the response
-    })
-  })
+      setMessages((prevMessages) => [...prevMessages, assistantResponse])
+    }, 1000)
+  }
+
+  return (
+    <Box
+      width="100vw"
+      height="100vh"
+      display="flex"
+      flexDirection="column"
+      justifyContent="center"
+      alignItems="center"
+      bgcolor="#f0f0f0" // Light gray background for the entire screen
+    >
+      <Stack
+        direction={'column'}
+        width="500px"
+        height="700px"
+        border="1px solid black"
+        p={2}
+        spacing={3}
+        bgcolor="white" // White background for the chat box
+      >
+        <Stack
+          direction={'column'}
+          spacing={2}
+          flexGrow={1}
+          overflow="auto"
+          maxHeight="100%"
+        >
+          {messages.map((message, index) => (
+            <Box
+              key={index}
+              display="flex"
+              justifyContent={
+                message.role === 'assistant' ? 'flex-start' : 'flex-end'
+              }
+            >
+              <Box
+                bgcolor={
+                  message.role === 'assistant' ? '#1976d2' : '#0288d1' // Different shades of blue for assistant and user
+                }
+                color="white"
+                borderRadius={16}
+                p={2}
+              >
+                {message.content}
+              </Box>
+            </Box>
+          ))}
+        </Stack>
+        <Stack direction={'row'} spacing={2}>
+          <TextField
+            label="Message"
+            fullWidth
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          <Button variant="contained" onClick={sendMessage}>
+            Send
+          </Button>
+        </Stack>
+      </Stack>
+    </Box>
+  )
 }
